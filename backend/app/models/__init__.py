@@ -1,3 +1,3 @@
-from app.models.telemetry import TelemetryLog, DiagnosticLog
+from app.models.telemetry import PanelTelemetry, DiagnosticReport
 
-__all__ = ["TelemetryLog", "DiagnosticLog"]
+__all__ = ["PanelTelemetry", "DiagnosticReport"]
