@@ -216,3 +216,17 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Node / React Dependencies
+node_modules/
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+
+# Database & Environment Secrets
+.env
+*.sqlite3
+
+# Model Weights / Heavy Datasets
+*.csv
+*.pth
