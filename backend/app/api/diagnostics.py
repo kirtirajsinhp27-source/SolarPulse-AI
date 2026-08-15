@@ -1,44 +1,72 @@
-from fastapi import APIRouter, Depends, status
+import traceback
+from datetime import datetime, timezone
+from typing import List
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.database import get_db
-from app.schemas.telemetry import TelemetryInput, DiagnosticResponse, HeatmapResponse
-from app.services.ml_runner import diagnostic_engine
-from app.crud.crud_telemetry import create_telemetry_log, create_diagnostic_report
+from app.models.solar import DiagnosticReport
+from app.services.ml_runner import MLRunner
+from app.schemas import TelemetryInput
 
-router = APIRouter(prefix="/diagnostics", tags=["Diagnostics & ML"])
+router = APIRouter(
+    tags=["Diagnostics"]
+)
 
-@router.post("/analyze", response_model=DiagnosticResponse, status_code=status.HTTP_201_CREATED)
-async def analyze_and_store_telemetry(data: TelemetryInput, db: AsyncSession = Depends(get_db)):
-    # 1. Save incoming telemetry to panel_telemetry table
-    await create_telemetry_log(db, data)
-    
-    # 2. Process ML Diagnostics
-    analysis = diagnostic_engine.analyze_string_telemetry(
-        voltage=data.voltage,
-        current=data.current,
-        irradiance=data.irradiance,
-        temp=data.temperature
-    )
-    
-    response = DiagnosticResponse(
-        string_id=data.string_id,
-        actual_power_w=analysis["actual_power_w"],
-        expected_power_w=analysis["expected_power_w"],
-        efficiency_loss_percent=analysis["efficiency_loss_percent"],
-        fault_type=analysis["fault_type"]
-    )
-    
-    # 3. Save Diagnostic output to diagnostic_reports table
-    await create_diagnostic_report(db, response)
-    
-    return response
+@router.post("/analyze")
+async def analyze_telemetry(data: TelemetryInput, db: AsyncSession = Depends(get_db)):
+    # 1. Calculation phase
+    try:
+        temp_val = getattr(data, 'temperature', getattr(data, 'temp', 25.0))
+        result = MLRunner.analyze_string_telemetry(
+            voltage=data.voltage,
+            current=data.current,
+            irradiance=data.irradiance,
+            temp=temp_val
+        )
+    except Exception as calc_err:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"MLRunner Error: {str(calc_err)}")
 
-@router.get("/heatmap/{string_id}", response_model=HeatmapResponse)
-async def get_string_heatmap(string_id: str, rows: int = 4, cols: int = 4):
-    matrix = diagnostic_engine.generate_heatmap_matrix(rows=rows, cols=cols)
-    return HeatmapResponse(
-        string_id=string_id,
-        rows=rows,
-        cols=cols,
-        matrix=matrix
-    )
+    # 2. Database save phase
+    try:
+        report = DiagnosticReport(
+            string_id=data.string_id,
+            fault_type=result.get("fault_type", "Normal Operation"),
+            efficiency_loss=result.get("efficiency_loss_percent", 0.0),
+            power_output_kw=result.get("actual_power_w", 0.0) / 1000.0,
+            heatmap_matrix=None,
+            timestamp=datetime.now(timezone.utc)  # Explicit UTC timestamp
+        )
+        db.add(report)
+        await db.commit()
+        await db.refresh(report)
+    except Exception as db_err:
+        await db.rollback()
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Database Save Error: {str(db_err)}")
+
+    return result
+
+@router.get("/reports", response_model=List[dict])
+async def get_diagnostic_reports(limit: int = 10, db: AsyncSession = Depends(get_db)):
+    try:
+        result = await db.execute(
+            select(DiagnosticReport).order_by(DiagnosticReport.timestamp.desc()).limit(limit)
+        )
+        reports = result.scalars().all()
+        return [
+            {
+                "id": str(r.id),
+                "string_id": r.string_id,
+                "fault_type": r.fault_type,
+                "efficiency_loss": r.efficiency_loss,
+                "power_output_kw": r.power_output_kw,
+                "timestamp": r.timestamp.isoformat() if r.timestamp else None
+            }
+            for r in reports
+        ]
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to fetch reports: {str(e)}")
