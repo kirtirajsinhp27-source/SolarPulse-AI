@@ -222,9 +222,14 @@ node_modules/
 frontend/node_modules/
 frontend/build/
 frontend/dist/
+frontend/.next/
+.next/
+.vscode/
 
-# Database & Environment Secrets
+# Local environment files
 .env
+.env.*
+.env.local
 *.sqlite3
 
 # Model Weights / Heavy Datasets
