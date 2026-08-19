@@ -10,8 +10,6 @@ from app.models.solar import DiagnosticReport
 from app.services.ml_runner import MLRunner
 from app.schemas import TelemetryInput
 from app.crud.crud_telemetry import get_telemetry_history
-from app.services.excel_telemetry import read_excel_telemetry
-from app.config import settings
 
 router = APIRouter(
     tags=["Diagnostics"]
@@ -102,13 +100,6 @@ async def telemetry_history(
         records = await get_telemetry_history(db, string_id, since, min(max(limit, 1), 5000))
     except Exception:
         records = []
-    if not records:
-        excel_records = read_excel_telemetry(settings.EXCEL_DATA_PATH)
-        if excel_records:
-            anchor = datetime.fromisoformat(excel_records[-1]["timestamp"]).replace(tzinfo=timezone.utc)
-            since = anchor - durations.get(timeframe, durations["Today"])
-        records = [record for record in excel_records if datetime.fromisoformat(record["timestamp"]).replace(tzinfo=timezone.utc) >= since]
-        return records[-min(max(limit, 1), 5000):]
     return [
         {
             "id": str(record.id),
@@ -134,13 +125,17 @@ async def historical_ai_insights(
         "30 Days": timedelta(days=30),
         "Year": timedelta(days=365),
     }
-    excel_records = read_excel_telemetry(settings.EXCEL_DATA_PATH)
-    if not excel_records:
-        return []
-    anchor = datetime.fromisoformat(excel_records[-1]["timestamp"]).replace(tzinfo=timezone.utc)
-    since = anchor - durations.get(timeframe, durations["Today"])
-    records = [record for record in excel_records if datetime.fromisoformat(record["timestamp"]).replace(tzinfo=timezone.utc) >= since]
-    analyzed = [MLRunner.analyze_historical_record(record) | {"timestamp": record["timestamp"]} for record in records]
+    since = datetime.now(timezone.utc) - durations.get(timeframe, durations["Today"])
+    records = await get_telemetry_history(db, "ALL", since, 5000)
+    analyzed = [
+        MLRunner.analyze_historical_record({
+            "voltage": record.voltage,
+            "current": record.current,
+            "irradiance": record.irradiance,
+            "temperature": record.temperature,
+        }) | {"timestamp": record.timestamp.isoformat() if record.timestamp else ""}
+        for record in records
+    ]
     if not analyzed:
         return []
     worst = sorted(analyzed, key=lambda item: item["efficiency_loss_percent"], reverse=True)[:3]

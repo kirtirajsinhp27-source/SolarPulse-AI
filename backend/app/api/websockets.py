@@ -4,8 +4,6 @@ from typing import List
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from app.database import AsyncSessionLocal
 from app.crud.crud_telemetry import get_telemetry_history
-from app.config import settings
-from app.services.excel_telemetry import read_excel_telemetry
 
 router = APIRouter(prefix="/ws", tags=["Real-Time Telemetry Stream"])
 
@@ -48,12 +46,6 @@ async def websocket_telemetry_endpoint(websocket: WebSocket, string_id: str):
                 records = await get_telemetry_history(db, string_id, since, 5000)
             except Exception:
                 records = []
-            if not records:
-                excel_records = read_excel_telemetry(settings.EXCEL_DATA_PATH)
-                if excel_records:
-                    anchor = datetime.fromisoformat(excel_records[-1]["timestamp"]).replace(tzinfo=timezone.utc)
-                    since = anchor - durations.get(timeframe, durations["Today"])
-                records = [record for record in excel_records if datetime.fromisoformat(record["timestamp"]).replace(tzinfo=timezone.utc) >= since]
             if not records:
                 await websocket.send_json({"status": "NO_DATA", "string_id": string_id})
                 while True:
