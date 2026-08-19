@@ -9,10 +9,8 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "SolarPulse AI Backend"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
-
     DATABASE_URL: str = "postgresql+asyncpg://user:pass@localhost:5432/dbname"
-    EXCEL_DATA_PATH: str = r"C:\Users\satya\OneDrive\Desktop\all_output (1).xlsx"
-
+    SHOWCASE_DATA: bool = True
     # CORS Origins
     ALLOWED_ORIGINS: Union[str, List[str]] = ["http://localhost:3000"]
 

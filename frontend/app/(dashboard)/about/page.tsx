@@ -2,21 +2,9 @@
 
 import React from 'react';
 import { Info, Sun, ShieldCheck, Zap, Cpu, MapPin, Calendar, Wrench } from 'lucide-react';
-import { INITIAL_PLANT_INFO } from '@/lib/mockData';
 
 export default function AboutPage() {
-  const specs = [
-    { label: 'Plant Name', value: INITIAL_PLANT_INFO.plantName },
-    { label: 'Plant Identifier', value: INITIAL_PLANT_INFO.plantId },
-    { label: 'Installed Capacity', value: `${INITIAL_PLANT_INFO.capacityKWp} kWp (DC)` },
-    { label: 'Solar PV Modules', value: '48x Canadian Solar HiKu6 545W Mono-PERC' },
-    { label: 'Inverters', value: '4x Sungrow SG50CX Commercial String Inverters' },
-    { label: 'MPPT Trackers', value: '8 Independent High-Efficiency Channels' },
-    { label: 'Grid Interconnection', value: '415V 3-Phase 50Hz Grid Tied' },
-    { label: 'Commissioning Date', value: 'January 15, 2024' },
-    { label: 'Facility Location', value: INITIAL_PLANT_INFO.location },
-    { label: 'Last Preventative Service', value: INITIAL_PLANT_INFO.lastMaintenance },
-  ];
+  const specs: { label: string; value: string }[] = [];
 
   return (
     <div className="space-y-6">
