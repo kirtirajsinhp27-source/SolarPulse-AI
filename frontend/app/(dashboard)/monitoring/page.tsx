@@ -283,7 +283,7 @@ export default function MonitoringPage() {
             >
               ₹{inv.financialLossINR.toLocaleString('en-IN')}
             </div>
-  =        </div>
+          </div>
         </div>
 
         {/* Loss Reason */}

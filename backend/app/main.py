@@ -13,7 +13,25 @@ app = FastAPI(
     version=settings.VERSION,
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
+app.include_router(
+    diagnostics.router,
+    prefix=settings.API_V1_STR
+)
 
+app.include_router(
+    predictions.router,
+    prefix=settings.API_V1_STR
+)
+
+app.include_router(
+    intraday.router,
+    prefix=settings.API_V1_STR
+)
+
+app.include_router(
+    websockets.router,
+    prefix=settings.API_V1_STR
+)
 
 @app.get(f"{settings.API_V1_STR}/dashboard/overview")
 async def dashboard_overview():
