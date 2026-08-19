@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
 
     DATABASE_URL: str = "postgresql+asyncpg://user:pass@localhost:5432/dbname"
+    EXCEL_DATA_PATH: str = r"C:\Users\satya\OneDrive\Desktop\all_output (1).xlsx"
 
     # CORS Origins
     ALLOWED_ORIGINS: Union[str, List[str]] = ["http://localhost:3000"]

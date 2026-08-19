@@ -1,7 +1,11 @@
 import asyncio
-import random
+from datetime import datetime, timedelta, timezone
 from typing import List
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from app.database import AsyncSessionLocal
+from app.crud.crud_telemetry import get_telemetry_history
+from app.config import settings
+from app.services.excel_telemetry import read_excel_telemetry
 
 router = APIRouter(prefix="/ws", tags=["Real-Time Telemetry Stream"])
 
@@ -26,25 +30,70 @@ manager = ConnectionManager()
 @router.websocket("/telemetry/{string_id}")
 async def websocket_telemetry_endpoint(websocket: WebSocket, string_id: str):
     """
-    Streams live telemetry metrics for a given solar string ID every 1.5 seconds.
-    Simulates real-time sensor variations (Voltage, Current, Temp, Irradiance).
+    Replays persisted telemetry records in chronological order. The frontend can
+    use this endpoint as a live playback stream for previously collected data.
     """
     await manager.connect(websocket)
     try:
-        while True:
-            # Simulate real-time solar panel fluctuations
-            base_irradiance = random.uniform(800.0, 1000.0)
-            simulated_data = {
-                "string_id": string_id,
-                "voltage": round(random.uniform(36.0, 40.0), 2),
-                "current": round(random.uniform(7.5, 9.2), 2),
-                "irradiance": round(base_irradiance, 1),
-                "temperature": round(random.uniform(35.0, 52.0), 1),
-                "status": "OPERATIONAL" if base_irradiance > 850 else "WARNING_LOW_IRRADIANCE"
+        async with AsyncSessionLocal() as db:
+            timeframe = websocket.query_params.get("timeframe", "Today")
+            durations = {
+                "Today": timedelta(days=1),
+                "7 Days": timedelta(days=7),
+                "30 Days": timedelta(days=30),
+                "Year": timedelta(days=365),
             }
-            
-            await websocket.send_json(simulated_data)
-            await asyncio.sleep(1.5)  # Stream interval
+            since = datetime.now(timezone.utc) - durations.get(timeframe, durations["Today"])
+            try:
+                records = await get_telemetry_history(db, string_id, since, 5000)
+            except Exception:
+                records = []
+            if not records:
+                excel_records = read_excel_telemetry(settings.EXCEL_DATA_PATH)
+                if excel_records:
+                    anchor = datetime.fromisoformat(excel_records[-1]["timestamp"]).replace(tzinfo=timezone.utc)
+                    since = anchor - durations.get(timeframe, durations["Today"])
+                records = [record for record in excel_records if datetime.fromisoformat(record["timestamp"]).replace(tzinfo=timezone.utc) >= since]
+            if not records:
+                await websocket.send_json({"status": "NO_DATA", "string_id": string_id})
+                while True:
+                    await asyncio.sleep(10)
+
+            for record in records:
+                if isinstance(record, dict):
+                    voltage = record["voltage"]
+                    current = record["current"]
+                    power_kw = record.get("power_kw")
+                    generation_kwh = record.get("generation_kwh")
+                    irradiance = record["irradiance"]
+                    temperature = record["temperature"]
+                    timestamp = record.get("timestamp")
+                else:
+                    voltage = record.voltage
+                    current = record.current
+                    power_kw = None
+                    generation_kwh = None
+                    irradiance = record.irradiance
+                    temperature = record.temperature
+                    timestamp = record.timestamp.isoformat() if record.timestamp else None
+                record_id = record["id"] if isinstance(record, dict) else str(record.id)
+                record_string_id = record["string_id"] if isinstance(record, dict) else record.string_id
+                record_panel_id = record["panel_id"] if isinstance(record, dict) else record.panel_id
+                await websocket.send_json({
+                    "id": record_id,
+                    "string_id": record_string_id,
+                    "panel_id": record_panel_id,
+                    "voltage": voltage,
+                    "current": current,
+                    "power_kw": power_kw,
+                    "generation_kwh": generation_kwh,
+                    "performance_ratio": record.get("performance_ratio") if isinstance(record, dict) else None,
+                    "irradiance": irradiance,
+                    "temperature": temperature,
+                    "timestamp": timestamp,
+                    "status": "OPERATIONAL" if irradiance >= 200 else "LOW_IRRADIANCE",
+                })
+                await asyncio.sleep(1.5)
             
     except WebSocketDisconnect:
         manager.disconnect(websocket)

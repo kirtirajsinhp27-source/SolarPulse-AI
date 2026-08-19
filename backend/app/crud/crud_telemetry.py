@@ -44,3 +44,18 @@ async def get_recent_telemetry(db: AsyncSession, string_id: str, limit: int = 10
     )
     result = await db.execute(stmt)
     return list(result.scalars().all())
+
+async def get_telemetry_history(
+    db: AsyncSession,
+    string_id: str | None = None,
+    since=None,
+    limit: int = 500,
+) -> List[PanelTelemetry]:
+    stmt = select(PanelTelemetry)
+    if string_id and string_id.upper() != "ALL":
+        stmt = stmt.where(PanelTelemetry.string_id == string_id)
+    if since is not None:
+        stmt = stmt.where(PanelTelemetry.timestamp >= since)
+    stmt = stmt.order_by(PanelTelemetry.timestamp.asc()).limit(limit)
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
