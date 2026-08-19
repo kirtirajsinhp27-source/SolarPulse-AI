@@ -176,9 +176,9 @@ export default function Header({
           >
             <div>
               <div className="text-xs font-bold text-slate-900 leading-tight group-hover:text-slate-700">
-                {user?.fullName ?? 'Account'}
+                {user?.name ?? 'Account'}
               </div>
-              <div className="text-[10px] text-slate-400 font-medium">{user?.roleTitle ?? 'Signed-in user'}</div>
+              <div className="text-[10px] text-slate-400 font-medium">{user?.role === 'admin' ? 'Administrator' : user?.role ?? 'Signed-in user'}</div>
             </div>
           </Link>
           <button

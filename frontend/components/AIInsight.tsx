@@ -12,7 +12,7 @@ import {
   Bot,
   RefreshCw,
 } from 'lucide-react';
-import { AIInsightItem } from '@/lib/mockData';
+import { AIInsightItem } from '@/types';
 
 interface AIInsightProps {
   insights: AIInsightItem[];

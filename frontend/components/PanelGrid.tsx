@@ -13,7 +13,7 @@ import {
   ChevronRight,
   Sparkles,
 } from 'lucide-react';
-import { SolarPanelModule } from '@/lib/mockData';
+import { SolarPanelModule } from '@/types';
 
 interface PanelGridProps {
   panels: SolarPanelModule[];

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Info, Sun, ShieldCheck, Zap, Cpu, MapPin, Calendar, Wrench } from 'lucide-react';
+import { INITIAL_PLANT_INFO } from '@/types';
 
 export default function AboutPage() {
   const specs: { label: string; value: string }[] = [];

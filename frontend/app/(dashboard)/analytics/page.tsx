@@ -29,7 +29,7 @@ export default function AnalyticsPage() {
   const { chartData, metrics, selectedTimeframe, setSelectedTimeframe } = useWebSocket();
   const [exportFeedback, setExportFeedback] = useState<string>('');
 
-  const timeRanges = ['Today', '7 Days', '30 Days', 'Year'];
+  const timeRanges = ['Today', '7 Days', '30 Days', 'Year'] as const;
 
   // Inverter Comparative Performance Telemetry Data
   const invertersComparative = [
@@ -81,14 +81,14 @@ export default function AnalyticsPage() {
 
   // Monthly Analytics & Insolation Historical Data
   const monthlyData = [
-    { month: 'January 2026', yieldKWh: '38,240', baselineKWh: '36,000', insolation: '142.5', pr: '84.1%', specificYield: '152.9', psh: '4.6', revenue: '$8,412.80', delta: '+6.2%' },
-    { month: 'February 2026', yieldKWh: '42,180', baselineKWh: '40,000', insolation: '158.2', pr: '84.8%', specificYield: '168.7', psh: '5.6', revenue: '$9,279.60', delta: '+5.4%' },
-    { month: 'March 2026', yieldKWh: '49,850', baselineKWh: '48,000', insolation: '184.0', pr: '85.2%', specificYield: '199.4', psh: '5.9', revenue: '$10,967.00', delta: '+3.8%' },
-    { month: 'April 2026', yieldKWh: '54,220', baselineKWh: '52,000', insolation: '198.6', pr: '84.9%', specificYield: '216.8', psh: '6.6', revenue: '$11,928.40', delta: '+4.2%' },
-    { month: 'May 2026', yieldKWh: '58,940', baselineKWh: '56,000', insolation: '214.2', pr: '84.3%', specificYield: '235.7', psh: '6.9', revenue: '$12,966.80', delta: '+5.2%' },
-    { month: 'June 2026', yieldKWh: '61,420', baselineKWh: '60,000', insolation: '221.8', pr: '83.9%', specificYield: '245.6', psh: '7.4', revenue: '$13,512.40', delta: '+2.3%' },
-    { month: 'July 2026', yieldKWh: '63,110', baselineKWh: '61,000', insolation: '228.4', pr: '84.2%', specificYield: '252.4', psh: '7.4', revenue: '$13,884.20', delta: '+3.4%' },
-    { month: 'August (MTD)', yieldKWh: '34,280', baselineKWh: '32,500', insolation: '124.0', pr: '84.6%', specificYield: '137.1', psh: '5.7', revenue: '$7,541.60', delta: '+5.5%' },
+    { month: 'January 2026', yieldKWh: '38,240', baselineKWh: '36,000', insolation: '142.5', pr: '84.1%', specificYield: '152.9', psh: '4.6', revenue: '₹8,412.80', delta: '+6.2%' },
+    { month: 'February 2026', yieldKWh: '42,180', baselineKWh: '40,000', insolation: '158.2', pr: '84.8%', specificYield: '168.7', psh: '5.6', revenue: '₹9,279.60', delta: '+5.4%' },
+    { month: 'March 2026', yieldKWh: '49,850', baselineKWh: '48,000', insolation: '184.0', pr: '85.2%', specificYield: '199.4', psh: '5.9', revenue: '₹10,967.00', delta: '+3.8%' },
+    { month: 'April 2026', yieldKWh: '54,220', baselineKWh: '52,000', insolation: '198.6', pr: '84.9%', specificYield: '216.8', psh: '6.6', revenue: '₹11,928.40', delta: '+4.2%' },
+    { month: 'May 2026', yieldKWh: '58,940', baselineKWh: '56,000', insolation: '214.2', pr: '84.3%', specificYield: '235.7', psh: '6.9', revenue: '₹12,966.80', delta: '+5.2%' },
+    { month: 'June 2026', yieldKWh: '61,420', baselineKWh: '60,000', insolation: '221.8', pr: '83.9%', specificYield: '245.6', psh: '7.4', revenue: '₹13,512.40', delta: '+2.3%' },
+    { month: 'July 2026', yieldKWh: '63,110', baselineKWh: '61,000', insolation: '228.4', pr: '84.2%', specificYield: '252.4', psh: '7.4', revenue: '₹13,884.20', delta: '+3.4%' },
+    { month: 'August (MTD)', yieldKWh: '34,280', baselineKWh: '32,500', insolation: '124.0', pr: '84.6%', specificYield: '137.1', psh: '5.7', revenue: '₹7,541.60', delta: '+5.5%' },
   ];
 
   // Loss Factor Distribution
@@ -108,14 +108,14 @@ export default function AnalyticsPage() {
       const rows = monthlyData
         .map(
           (m) =>
-            `"${m.month}",${m.yieldKWh.replace(',', '')},${m.baselineKWh.replace(',', '')},${m.insolation},${m.pr},${m.specificYield},${m.psh},${m.revenue.replace(/[$,]/g, '')},${m.delta}`
+            `"₹{m.month}",₹{m.yieldKWh.replace(',', '')},₹{m.baselineKWh.replace(',', '')},₹{m.insolation},₹{m.pr},₹{m.specificYield},₹{m.psh},₹{m.revenue.replace(/[₹,]/g, '')},₹{m.delta}`
         )
         .join('\n');
       const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `solar_analytics_report_${selectedTimeframe.toLowerCase().replace(' ', '_')}.csv`);
+      link.setAttribute('download', `solar_analytics_report_₹{selectedTimeframe.toLowerCase().replace(' ', '_')}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -162,7 +162,7 @@ export default function AnalyticsPage() {
                   key={range}
                   type="button"
                   onClick={() => setSelectedTimeframe(range)}
-                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                  className={`px-3 py-1.5 rounded-lg transition-all ₹{
                     selectedTimeframe === range
                       ? 'bg-white text-slate-900 shadow-xs font-bold'
                       : 'text-slate-600 hover:text-slate-900'
@@ -289,7 +289,7 @@ export default function AnalyticsPage() {
                     <td className="py-3 px-3.5 text-slate-600 font-mono">{inv.mpptEfficiency}</td>
                     <td className="py-3 px-3.5">
                       <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ₹{
                           isOptimal
                             ? 'bg-emerald-100 text-emerald-800'
                             : 'bg-amber-100 text-amber-800'
@@ -346,7 +346,7 @@ export default function AnalyticsPage() {
             <div key={idx} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5 text-xs">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-1.5">
-                  <span className={`w-2.5 h-2.5 rounded-full ${item.color}`} />
+                  <span className={`w-2.5 h-2.5 rounded-full ₹{item.color}`} />
                   <span className="font-bold text-slate-900">{item.label}</span>
                 </div>
                 <span className="font-extrabold text-slate-800">{item.lossPct}</span>
@@ -394,7 +394,7 @@ export default function AnalyticsPage() {
                 <th className="py-3 px-3.5">PR (%)</th>
                 <th className="py-3 px-3.5">Specific Yield</th>
                 <th className="py-3 px-3.5">Peak Hours</th>
-                <th className="py-3 px-3.5">Revenue ($)</th>
+                <th className="py-3 px-3.5">Revenue (₹)</th>
                 <th className="py-3 px-3.5 rounded-r-lg">Variance</th>
               </tr>
             </thead>

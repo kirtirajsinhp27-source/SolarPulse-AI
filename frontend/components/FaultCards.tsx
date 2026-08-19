@@ -13,7 +13,7 @@ import {
   ShieldAlert,
   Check,
 } from 'lucide-react';
-import { FaultAlert } from '@/lib/mockData';
+import { FaultAlert } from '@/types';
 
 interface FaultCardsProps {
   alerts: FaultAlert[];

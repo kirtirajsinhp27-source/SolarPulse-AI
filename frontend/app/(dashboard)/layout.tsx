@@ -115,7 +115,7 @@ export default function DashboardLayout({
           lastUpdated={lastUpdated}
           activeAlertCount={alerts.filter((a) => a.status === 'active').length}
           selectedTimeframe={selectedTimeframe}
-          onSelectTimeframe={setSelectedTimeframe}
+          onSelectTimeframe={(tf) => setSelectedTimeframe(tf as 'Today' | '7 Days' | '30 Days' | 'Year')}
           telemetryStatus={telemetryStatus}
           user={user}
         />

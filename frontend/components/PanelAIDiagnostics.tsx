@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { AlertTriangle, CalendarClock, IndianRupee, Thermometer, Wrench } from 'lucide-react';
-import { SolarPanelModule } from '@/lib/mockData';
+import { SolarPanelModule } from '@/types';
 
 interface PanelAIDiagnosticsProps {
   panels: SolarPanelModule[];

@@ -142,3 +142,20 @@ export interface FinancialMetrics {
   feedInTariffPerKWh: number;
   carbonCreditPricePerTon: number;
 }
+export const INITIAL_PLANT_INFO: PlantMetadata = {
+  plantId: 'SOLAR-001',
+  plantName: 'SolarPulse PV Plant',
+  capacityKWp: 261.6,
+  commissioningDate: '2024-01-15',
+  location: 'Ahmedabad, Gujarat, India',
+  coordinates: {
+    lat: 23.0225,
+    lng: 72.5714,
+  },
+  inverterCount: 4,
+  moduleCount: 48,
+  tiltAngleDeg: 23,
+  azimuthDeg: 180,
+  lastMaintenance: '2026-08-01',
+  nextScheduledInspection: '2026-09-01',
+};

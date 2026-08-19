@@ -14,11 +14,11 @@ export default function ProfilePage() {
   if (!user) return null;
 
   const details = [
-    { label: 'Full Name', value: user.fullName, icon: User },
+    { label: 'Full Name', value: user.name, icon: User },
     { label: 'Email Address', value: user.email || 'Not provided', icon: Mail },
-    { label: 'Phone Number', value: user.phone || 'Not provided', icon: Phone },
-    { label: 'Workspace', value: user.workspaceName, icon: Building2 },
-    { label: 'Role', value: user.roleTitle, icon: BadgeCheck },
+    { label: 'Phone Number', value: 'Not provided', icon: Phone },
+    { label: 'Workspace', value: 'SolarPulse-AI', icon: Building2 },
+    { label: 'Role', value: user.role === 'admin' ? 'Administrator' : user.role, icon: BadgeCheck },
     { label: 'Access Level', value: user.role === 'admin' ? 'Administrator' : 'Standard user', icon: ShieldCheck },
   ];
 

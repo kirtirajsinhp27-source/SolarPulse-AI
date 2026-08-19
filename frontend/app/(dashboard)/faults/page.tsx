@@ -24,7 +24,7 @@ import {
   Cpu,
   Thermometer,
 } from 'lucide-react';
-import { FaultAlert } from '@/lib/mockData';
+import { FaultAlert } from '@/types';
 
 export default function FaultsPage() {
   const { alerts, resolveAlert, triggerAnomaly, insights } = useWebSocket();

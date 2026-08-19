@@ -45,6 +45,9 @@ export default function MonitoringPage() {
       mppt1: { v: '412V', a: '12.1A', p: '24.9 kW' },
       mppt2: { v: '415V', a: '12.0A', p: '24.9 kW' },
       dailyYieldKWh: 358.4,
+      electricityLossKWh: 4.2,
+      financialLossINR: 21.0,
+      lossReason: 'Normal operating variation',
     },
     {
       id: 'INV-02',
@@ -61,6 +64,9 @@ export default function MonitoringPage() {
       mppt1: { v: '408V', a: '11.9A', p: '24.2 kW' },
       mppt2: { v: '410V', a: '11.8A', p: '24.3 kW' },
       dailyYieldKWh: 349.1,
+      electricityLossKWh: 6.8,
+      financialLossINR: 34.0,
+      lossReason: 'Minor conversion loss',
     },
     {
       id: 'INV-03',
@@ -77,6 +83,9 @@ export default function MonitoringPage() {
       mppt1: { v: '372V', a: '9.8A', p: '20.1 kW' },
       mppt2: { v: '411V', a: '12.1A', p: '24.1 kW' },
       dailyYieldKWh: 312.8,
+      electricityLossKWh: 185.4,
+      financialLossINR: 927.0,
+      lossReason: 'MPPT underperformance / thermal derating',
     },
     {
       id: 'INV-04',
@@ -93,6 +102,9 @@ export default function MonitoringPage() {
       mppt1: { v: '418V', a: '12.2A', p: '25.0 kW' },
       mppt2: { v: '416V', a: '12.1A', p: '25.1 kW' },
       dailyYieldKWh: 362.5,
+      electricityLossKWh: 3.6,
+      financialLossINR: 18.0,
+      lossReason: 'Normal operating variation',
     },
   ];
 
@@ -229,6 +241,67 @@ export default function MonitoringPage() {
               </div>
             </div>
 
+            {/* Electricity & Financial Loss */}
+            <div className="grid grid-cols-2 gap-2.5 text-xs">
+              <div
+                className={`p-2.5 rounded-xl border ${
+                inv.electricityLossKWh > 50
+                  ? 'bg-amber-50 border-amber-200'
+                  : 'bg-slate-50 border-slate-200/70'
+                 }`}
+              >
+                <div className="text-[10px] text-slate-400 font-medium">
+                  Electricity Loss
+                </div>
+              <div
+                className={`font-bold text-xs mt-0.5 ${
+                  inv.electricityLossKWh > 50
+                    ? 'text-amber-700'
+                    : 'text-slate-900'
+                }`}
+              >
+                {inv.electricityLossKWh} kWh
+              </div>
+            </div>
+
+            <div
+              className={`p-2.5 rounded-xl border ${
+                inv.financialLossINR > 500
+                  ? 'bg-amber-50 border-amber-200'
+                  : 'bg-slate-50 border-slate-200/70'
+              }`}
+            >
+              <div className="text-[10px] text-slate-400 font-medium">
+                Financial Loss
+              </div>
+              <div
+                className={`font-bold text-xs mt-0.5 ${
+                  inv.financialLossINR > 500
+                    ? 'text-amber-700'
+                    : 'text-slate-900'
+              }`}
+            >
+              ₹{inv.financialLossINR.toLocaleString('en-IN')}
+            </div>
+  =        </div>
+        </div>
+
+        {/* Loss Reason */}
+        <div className="p-2.5 rounded-xl border border-slate-200/70 bg-slate-50">
+          <div className="text-[10px] text-slate-400 font-medium">
+            Loss Reason
+          </div>
+          <div
+            className={`font-semibold text-xs mt-0.5 ${
+              inv.electricityLossKWh > 50
+                ? 'text-amber-700'
+                : 'text-slate-700'
+            }`}
+          >
+            {inv.lossReason}
+          </div>
+        </div>
+
             {/* MPPT Channels Breakdown */}
             <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/70 space-y-2 text-xs">
               <div className="text-[11px] font-bold text-slate-700 flex items-center justify-between">
@@ -267,6 +340,54 @@ export default function MonitoringPage() {
           </div>
         ))}
       </div>
+            {/* ------------------------------------------------------------- */}
+      {/* TOTAL PLANT LOSS SUMMARY                                     */}
+      {/* ------------------------------------------------------------- */}
+      <div className="bg-white rounded-2xl shadow-xl border border-slate-200/80 p-5 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="font-bold text-slate-900 text-sm">
+              Total Plant Loss
+            </h3>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Combined electricity and financial loss across all 4 inverters
+            </p>
+          </div>
+
+          <div className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg">
+            INV-03 requires attention
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/70">
+            <div className="text-[10px] text-slate-400 font-medium">
+              Total Electricity Loss
+            </div>
+            <div className="font-bold text-slate-900 text-lg mt-0.5">
+              200.0 kWh
+            </div>
+          </div>
+
+          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/70">
+            <div className="text-[10px] text-slate-400 font-medium">
+              Total Financial Loss
+            </div>
+            <div className="font-bold text-slate-900 text-lg mt-0.5">
+              ₹1,000
+            </div>
+          </div>
+
+          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/70">
+            <div className="text-[10px] text-slate-400 font-medium">
+              Primary Loss Reason
+            </div>
+            <div className="font-semibold text-amber-700 text-xs mt-1">
+              MPPT underperformance / thermal derating
+            </div>
+          </div>
+        </div>
+      </div>-
 
       {/* ------------------------------------------------------------- */}
       {/* SECTION 3: INVERTER POWER BALANCE & STRING TELEMETRY LOGS     */}

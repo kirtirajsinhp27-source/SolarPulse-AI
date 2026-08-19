@@ -190,10 +190,11 @@ export default function Sidebar({
           <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-between">
             <div className="min-w-0 flex-1">
               <p className="text-xs font-bold text-slate-900 truncate">
-                {user?.fullName ?? 'Account'}
+              {user?.name ?? 'Account'}
+
               </p>
               <p className="text-[10px] text-slate-500 truncate">
-                {user?.roleTitle ?? 'Signed-in user'}
+                {user?.role === 'admin' ? 'Administrator' : user?.role ?? 'Signed-in user'}
               </p>
             </div>
 

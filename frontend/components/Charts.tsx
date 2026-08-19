@@ -13,7 +13,7 @@ import {
   CheckCircle2,
   Cpu,
 } from 'lucide-react';
-import { GenerationDataPoint } from '@/lib/mockData';
+import { GenerationDataPoint } from '@/types';
 
 interface InverterEfficiencyData {
   id: string;
