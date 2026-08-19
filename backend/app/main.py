@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api import diagnostics, websockets
+from app.api import diagnostics, websockets, predictions, intraday
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -20,6 +20,8 @@ app.add_middleware(
 
 # Register Routers
 app.include_router(diagnostics.router, prefix=settings.API_V1_STR)
+app.include_router(predictions.router, prefix=settings.API_V1_STR)
+app.include_router(intraday.router, prefix=settings.API_V1_STR)
 app.include_router(websockets.router)  # Accessible via ws://localhost:8000/ws/telemetry/{string_id}
 
 @app.get("/")

@@ -21,6 +21,9 @@ if config.config_file_name is not None:
 
 # Import your Base from database.py
 from app.database import Base
+from app.config import settings
+
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 # Set target metadata for autogenerate support
 target_metadata = Base.metadata

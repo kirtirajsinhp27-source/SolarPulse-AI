@@ -21,3 +21,27 @@ class HeatmapResponse(BaseModel):
     rows: int
     cols: int
     matrix: List[List[float]]
+
+class DailyPredictionInput(BaseModel):
+    date: str = Field(..., example="2022-07-01")
+    insolation: float = Field(..., example=5.5)
+    actual_generation: float | None = Field(default=None, example=4200.0)
+
+
+class DailyPredictionResponse(BaseModel):
+    date: str
+    predicted_generation: float
+    actual_generation: float | None = None
+    deviation_percent: float | None = None
+    anomaly: bool | None = None
+    estimated_loss_kwh: float | None = None
+    estimated_loss_money: float | None = None
+    fault: str | None = None
+
+
+class IntradayAnalyzeInput(BaseModel):
+    date: str = Field(..., example="2022-07-01")
+    hour: int = Field(..., example=13)
+    actual_generation_kwh: float | None = Field(default=None, example=96.2)
+    irradiance_wm2: float | None = Field(default=None, example=850.0)
+    expected_generation_kwh: float | None = Field(default=None, example=120.5)

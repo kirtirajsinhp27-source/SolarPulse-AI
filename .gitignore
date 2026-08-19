@@ -230,3 +230,4 @@ frontend/dist/
 # Model Weights / Heavy Datasets
 *.csv
 *.pth
+*.pkl
