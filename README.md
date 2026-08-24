@@ -1,222 +1,109 @@
-&#x20;☀️ SolarPulse-AI
+# Helios PV PRO — Solar Monitoring & Plant Intelligence Platform
+
+A high-performance solar monitoring platform built with **Next.js**, **TypeScript**, **Tailwind CSS**, and a FastAPI backend. The project follows a hybrid architecture for practical use: the live monitoring page is the main operational view, the dashboard provides summary KPIs, and the panel health section visualizes the full 48-panel array.
+
+---
+
+## 🌟 Final Architecture
+
+- **Live Monitoring (`/monitoring`)**: main real-time operational interface for inverter telemetry, power flow, string diagnostics, and plant status.
+- **Summary Dashboard (`/dashboard`)**: overview of generation, loss, performance ratio, alerts, and system health.
+- **Solar Array Health (`/panels`)**: complete 48-module array representation grouped by Array A-D and String A1/B1-style strings.
+- **Analytics (`/analytics`)**: yield, irradiance, trend analysis, and comparison views.
+- **Faults (`/faults`)**: diagnostic event feed and anomaly tracking.
+- **ROI & Financials (`/roi`)**: financial performance and payback estimation.
+- **Optional Streamlit Demo (`/dashboard.py`)**: standalone visual dashboard for demonstration and quick validation.
+
+This is the final recommended structure for the project: monitoring-first, dashboard-summary second, and simulation/demo support where needed.
+
+---
+
+## 🚀 Quick Start
+
+### 1. Install frontend dependencies
+```bash
+cd frontend
+npm install
+```
+
+### 2. Start the full stack
+From the project root:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\start-all.ps1
+```
+
+This starts:
+- Frontend: http://localhost:3001
+- Backend: http://localhost:8001/api/v1/dashboard/overview
+- Streamlit dashboard: http://localhost:8503
+
+### 3. Run manually if needed
+```bash
+cd frontend
+npm run dev -- --hostname 0.0.0.0 --port 3001
+```
+
+```bash
+cd backend
+PYTHONPATH=. python -m uvicorn app.main:app --host 0.0.0.0 --port 8001
+```
+
+```bash
+cd frontend
+python -m streamlit run dashboard.py --server.port 8503 --server.address 0.0.0.0
+```
+
+---
+
+## 📁 Project Structure
+
+```text
+SolarPulse-AI/
+├── backend/
+│   └── app/
+│       ├── api/
+│       ├── core/
+│       ├── services/
+│       ├── config.py
+│       └── main.py
+├── frontend/
+│   ├── app/
+│   │   ├── (auth)/
+│   │   └── (dashboard)/
+│   │       ├── dashboard/page.tsx
+│   │       ├── monitoring/page.tsx
+│   │       ├── panels/page.tsx
+│   │       ├── analytics/page.tsx
+│   │       ├── faults/page.tsx
+│   │       ├── roi/page.tsx
+│   │       └── about/page.tsx
+│   ├── components/
+│   ├── lib/
+│   ├── dashboard.py
+│   ├── package.json
+│   └── tsconfig.json
+├── README.md
+├── requirements.txt
+├── start-all.ps1
+└── .gitignore
+```
+
+---
+
+## ✅ Operational Recommendation
+
+The app is currently best operated in hybrid mode:
+- monitoring page = live plant operations
+- dashboard page = business summary and KPI overview
+- panel section = array health inspection
+- Streamlit page = optional standalone demo view
+
+This keeps the project practical, visually complete, and ready for future real-data integration with a database and live device connectivity.
 
+---
 
-
-&#x20;AI-Driven Solar PV Performance Monitoring, Maximum Power Extraction \& Fault Diagnostics
-
-
-
-SolarPulse-AI is an intelligent solar photovoltaic (PV) monitoring and performance optimization platform designed to help plant operators monitor generation, identify energy losses, detect faults, and estimate financial impact.
-
-
-
-\---
-
-
-
-&#x20;🚀 Overview
-
-
-
-Solar PV plants can experience energy losses due to inverter underperformance, thermal conditions, grid interruptions, environmental conditions, soiling, and other operational issues.
-
-
-
-SolarPulse-AI combines:
-
-
-
-\- Real-time solar telemetry
-
-\- Historical plant data
-
-\- Machine learning
-
-\- Intraday performance analysis
-
-\- Fault diagnostics
-
-\- Financial loss estimation
-
-\- Interactive visualization
-
-
-
-to provide a unified platform for monitoring and improving solar PV plant performance.
-
-&#x20;🎯 Key Features
-
-&#x20;⚡ Solar PV Performance Monitoring
-
-
-
-\- Real-time plant power monitoring
-
-\- Daily generation tracking
-
-\- Expected vs actual generation comparison
-
-\- Performance ratio and efficiency monitoring
-
-\- Irradiance and temperature monitoring
-
-
-
-&#x20;🤖 AI / Machine Learning
-
-
-
-\- XGBoost-based solar generation prediction
-
-\- AI-assisted performance analysis
-
-\- Anomaly and fault diagnostics
-
-\- Confidence-based insights
-
-&#x20;🔍 Intraday Loss Detection
-
-
-
-SolarPulse-AI analyzes generation at an hourly level to identify:
-
-
-
-\- Energy losses
-
-\- Underperformance
-
-\- Operational anomalies
-
-\- Potential causes of generation loss
-
-&#x20;💰 Financial Loss Estimation
-
-
-
-The system converts detected energy losses into estimated financial impact using Indian Rupees:
-
-
-
-\*\*Financial Loss = Lost Energy (kWh) × Electricity Tariff (₹/kWh)\*\*
-
-
-
-This helps plant operators prioritize issues based on their economic impact.
-
-
-
-&#x20;🔧 Inverter \& MPPT Monitoring
-
-
-
-The monitoring dashboard provides visibility into:
-
-
-
-\- DC input power
-
-\- AC output power
-
-\- Inverter efficiency
-
-\- Internal temperature
-
-\- Voltage
-
-\- Current
-
-\- Grid frequency
-
-\- Power factor
-
-\- MPPT channel performance
-
-
-
-&#x20;📊 Interactive Dashboard
-
-
-
-The frontend provides dedicated views for:
-
-
-
-\- Dashboard
-
-\- Monitoring
-
-\- Analytics
-
-\- Faults
-
-\- Profile
-
-\- About
-
-\---
-
-
-
-&#x20;🏗️ System Architecture
-
-
-
-SolarPulse-AI follows a layered architecture connecting solar telemetry, data processing, machine learning, backend APIs, and the interactive frontend.
-
-
-
-&#x20;                   Solar PV Plant
-
-&#x20;                         │
-
-&#x20;                         ▼
-
-&#x20;               ┌──────────────────┐
-
-&#x20;               │ Telemetry / Data │
-
-&#x20;               │     Sources      │
-
-&#x20;               └────────┬─────────┘
-
-&#x20;                        │
-
-&#x20;                        ▼
-
-&#x20;               ┌──────────────────┐
-
-&#x20;               │ FastAPI Backend  │
-
-&#x20;               └────────┬─────────┘
-
-&#x20;                        │
-
-&#x20;         ┌──────────────┼──────────────┐
-
-&#x20;         ▼              ▼              ▼
-
-&#x20;    Telemetry       ML / XGBoost   Intraday
-
-&#x20;     Analysis        Prediction     Analysis
-
-&#x20;         │              │              │
-
-&#x20;         └──────────────┼──────────────┘
-
-&#x20;                        ▼
-
-&#x20;               ┌──────────────────┐
-
-&#x20;               │ PostgreSQL / DB        │
-
-
-
-&#x20;               └────────┬─────────┘
-
-&#x20;                        │
-
-&#x20;                        ▼
+## 📄 License
+© 2026 Acme Inc. All rights reserved. • Privacy & Terms
 
 &#x20;               ┌──────────────────┐
 
