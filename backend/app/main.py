@@ -16,6 +16,35 @@ from app.api import (
 )
 from app.services.intraday_dashboard import build_dashboard_intraday
 
+
+def build_default_panels():
+    arrays = ["Array A", "Array B", "Array C", "Array D"]
+    panels = []
+
+    for array_index, array_name in enumerate(arrays):
+        for i in range(12):
+            string_index = 1 if i < 6 else 2
+            module_id = f"MOD-{chr(65 + array_index)}{str(i + 1).zfill(2)}"
+            panel = {
+                "id": module_id,
+                "arrayId": array_name,
+                "stringId": f"STR-{chr(65 + array_index)}{string_index}",
+                "row": 1 if i < 6 else 2,
+                "col": (i % 6) + 1,
+                "status": "warning" if array_index == 1 and i == 5 else "optimal",
+                "voltageV": round(41.4 + ((i % 4) * 0.7), 1),
+                "currentA": round(9.2 + ((i % 5) * 0.4), 1),
+                "powerW": round(390 + ((i % 6) * 14) + (array_index * 10), 1),
+                "temperatureC": 56.4 if array_index == 1 and i == 5 else round(43.5 + (i % 4) * 0.9, 1),
+                "efficiencyPercent": 81.2 if array_index == 1 and i == 5 else round(96.4 - (i % 4) * 0.3, 1),
+                "mpptChannel": f"MPPT-{array_index + 1}{string_index}",
+                "issueDescription": "Thermal hotspot detected." if array_index == 1 and i == 5 else None,
+            }
+            panels.append(panel)
+
+    return panels
+
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
@@ -122,37 +151,7 @@ async def dashboard_overview():
                     "efficiencyPercent": 95.9,
                 },
             ],
-            "panels": [
-                {
-                    "id": "DEMO-A01",
-                    "arrayId": "Demo Array A",
-                    "stringId": "DEMO-STR-A1",
-                    "row": 1,
-                    "col": 1,
-                    "status": "optimal",
-                    "voltageV": 41.8,
-                    "currentA": 9.6,
-                    "powerW": round(401.3 + (wave * 3), 1),
-                    "temperatureC": round(43.5 + (wave * 0.5), 1),
-                    "efficiencyPercent": 97.2,
-                    "mpptChannel": "DEMO-MPPT-1",
-                },
-                {
-                    "id": "DEMO-B05",
-                    "arrayId": "Demo Array B",
-                    "stringId": "DEMO-STR-B1",
-                    "row": 1,
-                    "col": 5,
-                    "status": "warning",
-                    "voltageV": 37.2,
-                    "currentA": 8.1,
-                    "powerW": 301.3,
-                    "temperatureC": 56.4,
-                    "efficiencyPercent": 81.2,
-                    "issueDescription": "Showcase thermal hotspot.",
-                    "mpptChannel": "DEMO-MPPT-2",
-                },
-            ],
+            "panels": build_default_panels(),
             "alerts": [
                 {
                     "id": "DEMO-ALERT-01",
@@ -216,7 +215,7 @@ async def dashboard_overview():
             "performanceRatio": 0,
         },
         "chartData": [],
-        "panels": [],
+        "panels": build_default_panels(),
         "alerts": [],
         "insights": [],
     }
