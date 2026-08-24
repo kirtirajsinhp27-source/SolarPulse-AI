@@ -121,51 +121,40 @@ const defaultAlerts: Alert[] = [
   },
 ];
 
-const defaultPanels: SolarPanelModule[] = [
-  {
-    id: 'MOD-A01',
-    arrayId: 'Array A',
-    stringId: 'STR-A1',
-    row: 1,
-    col: 1,
-    status: 'optimal',
-    voltageV: 41.8,
-    currentA: 9.6,
-    powerW: 401.3,
-    temperatureC: 43.5,
-    efficiencyPercent: 97.2,
-    mpptChannel: 'MPPT-1A',
-  },
-  {
-    id: 'MOD-A02',
-    arrayId: 'Array A',
-    stringId: 'STR-A1',
-    row: 1,
-    col: 2,
-    status: 'optimal',
-    voltageV: 41.9,
-    currentA: 9.5,
-    powerW: 398.1,
-    temperatureC: 43.8,
-    efficiencyPercent: 96.8,
-    mpptChannel: 'MPPT-1A',
-  },
-  {
-    id: 'MOD-B05',
-    arrayId: 'Array B',
-    stringId: 'STR-B1',
-    row: 1,
-    col: 5,
-    status: 'warning',
-    voltageV: 37.2,
-    currentA: 8.1,
-    powerW: 301.3,
-    temperatureC: 56.4,
-    efficiencyPercent: 81.2,
-    mpptChannel: 'MPPT-2A',
-    issueDescription: 'Thermal hotspot detected.',
-  },
-];
+export const buildDefaultPanels = (): SolarPanelModule[] => {
+  const arrays = ['Array A', 'Array B', 'Array C', 'Array D'];
+  const panels: SolarPanelModule[] = [];
+
+  arrays.forEach((arrayName, arrayIndex) => {
+    for (let i = 0; i < 12; i += 1) {
+      const stringIndex = i < 6 ? 1 : 2;
+      const row = i < 6 ? 1 : 2;
+      const col = (i % 6) + 1;
+      const moduleId = `MOD-${String.fromCharCode(65 + arrayIndex)}${String(i + 1).padStart(2, '0')}`;
+      const isWarning = arrayName === 'Array B' && i === 5;
+
+      panels.push({
+        id: moduleId,
+        arrayId: arrayName,
+        stringId: `STR-${String.fromCharCode(65 + arrayIndex)}${stringIndex}`,
+        row,
+        col,
+        status: isWarning ? 'warning' : 'optimal',
+        voltageV: 41.4 + ((i % 4) * 0.7),
+        currentA: 9.2 + ((i % 5) * 0.4),
+        powerW: 390 + ((i % 6) * 14) + (arrayIndex * 10),
+        temperatureC: isWarning ? 56.4 : 43.5 + (i % 4) * 0.9,
+        efficiencyPercent: isWarning ? 81.2 : 96.4 - (i % 4) * 0.3,
+        mpptChannel: `MPPT-${arrayIndex + 1}${stringIndex}`,
+        issueDescription: isWarning ? 'Thermal hotspot detected.' : undefined,
+      });
+    }
+  });
+
+  return panels;
+};
+
+const defaultPanels = buildDefaultPanels();
 
 const defaultChartData: ChartPoint[] = [
   { time: '06:00', actualKW: 4.2, baselineKW: 5.0, irradianceWm2: 120, efficiencyPercent: 92.1 },
@@ -223,16 +212,22 @@ export function useWebSocket() {
           }));
         }
 
-        if (Array.isArray(data.panels)) {
+        if (Array.isArray(data.panels) && data.panels.length >= 48) {
           setPanels(data.panels);
+        } else {
+          setPanels(buildDefaultPanels());
         }
 
-        if (Array.isArray(data.chartData)) {
+        if (Array.isArray(data.chartData) && data.chartData.length > 0) {
           setChartData(data.chartData);
+        } else {
+          setChartData(defaultChartData);
         }
 
-        if (Array.isArray(data.alerts)) {
+        if (Array.isArray(data.alerts) && data.alerts.length > 0) {
           setAlerts(data.alerts);
+        } else {
+          setAlerts(defaultAlerts);
         }
 
         setTelemetryStatus('live')
@@ -256,17 +251,79 @@ export function useWebSocket() {
 
     const interval = window.setInterval(() => {
       setPingLatencyMs(Math.floor(35 + Math.random() * 25));
-      setLastUpdated(new Date().toLocaleTimeString());
+      const now = new Date();
+      const timeLabel = now.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      setLastUpdated(timeLabel);
 
-      setMetrics((previous) => ({
-        ...previous,
-        currentPowerKW: Number(
-          Math.max(
-            0,
-            previous.currentPowerKW + (Math.random() - 0.5) * 3
-          ).toFixed(1)
-        ),
-      }));
+      setMetrics((previous) => {
+        const nextPower = Number(
+          Math.min(240, Math.max(70, previous.currentPowerKW + (Math.random() - 0.5) * 12))
+            .toFixed(1)
+        );
+        const nextIrradiance = Number(
+          Math.min(980, Math.max(300, previous.irradianceWm2 + (Math.random() - 0.5) * 40))
+            .toFixed(0)
+        );
+        const nextGeneration = Number((previous.dailyGenerationKWh + nextPower * 0.012).toFixed(1));
+        const nextLoss = Number(
+          Math.min(420, Math.max(120, previous.electricityLossKWh + (Math.random() - 0.35) * 18)).toFixed(1)
+        );
+
+        return {
+          ...previous,
+          currentPowerKW: nextPower,
+          dailyGenerationKWh: nextGeneration,
+          electricityLossKWh: nextLoss,
+          financialLossINR: Number((nextLoss * 5).toFixed(1)),
+          irradianceWm2: nextIrradiance,
+          ambientTempC: Number((previous.ambientTempC + (Math.random() - 0.5) * 2).toFixed(1)),
+          pvTempC: Number((previous.pvTempC + (Math.random() - 0.5) * 3).toFixed(1)),
+          performanceRatio: Number((previous.performanceRatio + (Math.random() - 0.5) * 1.8).toFixed(1)),
+          efficiencyPercent: Number((previous.efficiencyPercent + (Math.random() - 0.5) * 1.4).toFixed(1)),
+        };
+      });
+
+      setChartData((previous) => {
+        const current = previous[previous.length - 1];
+        const nextPower = Math.max(20, Math.min(230, (current?.actualKW ?? 188.4) + (Math.random() - 0.5) * 16));
+        const nextBaseline = nextPower * 1.03;
+        const nextIrradiance = Math.max(280, Math.min(980, (current?.irradianceWm2 ?? 842) + (Math.random() - 0.5) * 42));
+        const nextEfficiency = Math.min(99, Math.max(88, (current?.efficiencyPercent ?? 96.2) + (Math.random() - 0.5) * 1.8));
+
+        const nextPoint = {
+          time: timeLabel,
+          actualKW: Number(nextPower.toFixed(1)),
+          baselineKW: Number(nextBaseline.toFixed(1)),
+          irradianceWm2: Number(nextIrradiance.toFixed(0)),
+          efficiencyPercent: Number(nextEfficiency.toFixed(1)),
+        };
+
+        return [...previous.slice(-11), nextPoint];
+      });
+
+      setPanels((previous) =>
+        previous.map((panel, index) => {
+          const isWarning = panel.status === 'warning';
+          const powerDelta = (Math.random() - 0.5) * (isWarning ? 38 : 20);
+          const tempDelta = (Math.random() - 0.5) * (isWarning ? 6 : 3);
+
+          return {
+            ...panel,
+            powerW: Number(
+              Math.max(180, Math.min(520, panel.powerW + powerDelta)).toFixed(1)
+            ),
+            temperatureC: Number(
+              Math.max(36, Math.min(68, panel.temperatureC + tempDelta)).toFixed(1)
+            ),
+            efficiencyPercent: Number(
+              Math.max(75, Math.min(99, panel.efficiencyPercent + (Math.random() - 0.5) * 1.6)).toFixed(1)
+            ),
+          };
+        })
+      );
     }, 5000);
 
     return () => window.clearInterval(interval);
