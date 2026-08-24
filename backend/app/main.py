@@ -5,7 +5,15 @@ from datetime import datetime, timezone
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api import diagnostics, websockets, predictions, intraday, inverters
+from app.api import (
+    diagnostics,
+    websockets,
+    predictions,
+    intraday,
+    inverters,
+    inverter_telemetry,
+    historical,
+)
 from app.services.intraday_dashboard import build_dashboard_intraday
 
 app = FastAPI(
@@ -49,6 +57,16 @@ app.include_router(
 
 app.include_router(
     inverters.router,
+    prefix=settings.API_V1_STR
+)
+
+app.include_router(
+    inverter_telemetry.router,
+    prefix=settings.API_V1_STR
+)
+
+app.include_router(
+    historical.router,
     prefix=settings.API_V1_STR
 )
 

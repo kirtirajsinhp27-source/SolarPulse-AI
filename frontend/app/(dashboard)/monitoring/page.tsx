@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { useWebSocket } from '@/lib/useWebSocket';
+import { useTimeframe } from '@/lib/TimeframeContext';
 import { useRouter } from 'next/navigation';
 import {
   Activity,
@@ -21,11 +22,20 @@ import {
 export default function MonitoringPage() {
   const router = useRouter();
 
-  const { metrics, pingLatencyMs, lastUpdated, isStreaming, selectedTimeframe } = useWebSocket();
+  const {
+  metrics,
+  pingLatencyMs,
+  lastUpdated,
+  isStreaming,
+} = useWebSocket();
+
+const { selectedTimeframe } = useTimeframe();
   const [selectedInverter, setSelectedInverter] = useState<string>('ALL');
 
   const [registeredInverters, setRegisteredInverters] = useState<any[]>([]);
-
+  const [inverterTelemetry, setInverterTelemetry] = useState<Record<string, any>>({});
+  const [historicalData, setHistoricalData] = useState<any[]>([]);
+  const [historicalLoading, setHistoricalLoading] = useState(false);
   useEffect(() => {
     const loadRegisteredInverters = async () => {
       try {
@@ -50,7 +60,85 @@ export default function MonitoringPage() {
 
     loadRegisteredInverters();
   }, []);
+useEffect(() => {
+  const loadTelemetry = async () => {
+    try {
+      const response = await fetch(
+        'http://127.0.0.1:8001/api/v1/inverters/INV-05/telemetry?limit=1',
+        {
+          cache: 'no-store',
+        }
+      );
 
+      if (!response.ok) {
+        throw new Error('Failed to load inverter telemetry');
+      }
+
+      const data = await response.json();
+
+      if (Array.isArray(data) && data.length > 0) {
+        setInverterTelemetry((previous) => ({
+          ...previous,
+          'INV-05': data[0],
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to load inverter telemetry:', error);
+    }
+  };
+
+  loadTelemetry();
+
+  const interval = window.setInterval(loadTelemetry, 5000);
+
+  return () => window.clearInterval(interval);
+}, []);
+  useEffect(() => {
+  if (selectedTimeframe === 'Today') {
+    setHistoricalData([]);
+    return;
+  }
+
+  const loadHistoricalData = async () => {
+    setHistoricalLoading(true);
+
+    try {
+      const timeframeMap: Record<string, string> = {
+        '7 Days': '7days',
+        '30 Days': '30days',
+        Year: 'year',
+      };
+
+      const timeframe = timeframeMap[selectedTimeframe];
+
+      const response = await fetch(
+        `http://127.0.0.1:8001/api/v1/historical/${timeframe}`,
+        {
+          cache: 'no-store',
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Historical request failed: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      setHistoricalData(
+        Array.isArray(data.records) ? data.records : []
+      );
+    } catch (error) {
+      console.error('Failed to load historical data:', error);
+      setHistoricalData([]);
+    } finally {
+      setHistoricalLoading(false);
+    }
+  };
+
+  loadHistoricalData();
+}, [selectedTimeframe]);
   const timeframeScale = {
     Today: 1,
     '7 Days': 0.94,
@@ -148,17 +236,53 @@ export default function MonitoringPage() {
     .map((registered) => ({
       id: registered.inverter_id,
       name: registered.name,
-      status: 'Registered',
-      dcPowerKW: 0,
-      acPowerKW: 0,
-      efficiency: '—',
-      tempC: 0,
+      status: inverterTelemetry[registered.inverter_id]
+  ? 'Optimal'
+  : 'Registered',
+      dcPowerKW: inverterTelemetry[registered.inverter_id]?.dc_power_kw ?? 0,
+acPowerKW: inverterTelemetry[registered.inverter_id]?.ac_power_kw ?? 0,
+efficiency:
+  inverterTelemetry[registered.inverter_id]?.efficiency_percent != null
+    ? `${inverterTelemetry[registered.inverter_id].efficiency_percent}%`
+    : '—',
+tempC: inverterTelemetry[registered.inverter_id]?.temperature_c ?? 0,
       voltageV: 0,
       currentA: 0,
-      gridFreqHz: 0,
-      powerFactor: 0,
-      mppt1: { v: '—', a: '—', p: '—' },
-      mppt2: { v: '—', a: '—', p: '—' },
+      gridFreqHz:
+  inverterTelemetry[registered.inverter_id]?.grid_frequency_hz ?? 0,
+
+powerFactor:
+  inverterTelemetry[registered.inverter_id]?.power_factor ?? 0,
+
+mppt1: {
+  v:
+    inverterTelemetry[registered.inverter_id]?.mppt1_voltage_v != null
+      ? `${inverterTelemetry[registered.inverter_id].mppt1_voltage_v}V`
+      : '—',
+  a:
+    inverterTelemetry[registered.inverter_id]?.mppt1_current_a != null
+      ? `${inverterTelemetry[registered.inverter_id].mppt1_current_a}A`
+      : '—',
+  p:
+    inverterTelemetry[registered.inverter_id]?.mppt1_power_kw != null
+      ? `${inverterTelemetry[registered.inverter_id].mppt1_power_kw} kW`
+      : '—',
+},
+
+mppt2: {
+  v:
+    inverterTelemetry[registered.inverter_id]?.mppt2_voltage_v != null
+      ? `${inverterTelemetry[registered.inverter_id].mppt2_voltage_v}V`
+      : '—',
+  a:
+    inverterTelemetry[registered.inverter_id]?.mppt2_current_a != null
+      ? `${inverterTelemetry[registered.inverter_id].mppt2_current_a}A`
+      : '—',
+  p:
+    inverterTelemetry[registered.inverter_id]?.mppt2_power_kw != null
+      ? `${inverterTelemetry[registered.inverter_id].mppt2_power_kw} kW`
+      : '—',
+},
       dailyYieldKWh: 0,
       electricityLossKWh: 0,
       financialLossINR: 0,
@@ -196,7 +320,25 @@ export default function MonitoringPage() {
       : timeframeInverters.filter((inv) => inv.id === selectedInverter);
 
   return (
+ 
     <div className="space-y-6">
+    {selectedTimeframe !== 'Today' && (
+  <div className="bg-white rounded-2xl border border-slate-200 p-4">
+    <h3 className="font-bold text-slate-900">
+      Historical Data: {selectedTimeframe}
+    </h3>
+
+    {historicalLoading ? (
+      <p className="text-sm text-slate-500 mt-2">
+        Loading historical data...
+      </p>
+    ) : (
+      <p className="text-sm text-slate-600 mt-2">
+        {historicalData.length} historical records loaded.
+      </p>
+    )}
+  </div>
+)}
       {/* ------------------------------------------------------------- */}
       {/* SECTION 1: DEDICATED MONITORING HEADER CARD                   */}
       {/* ------------------------------------------------------------- */}
@@ -207,6 +349,9 @@ export default function MonitoringPage() {
               <h1 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900">
                 Live Inverter & String Telemetry
               </h1>
+	      <span className="text-xs font-bold text-blue-600">
+  [{selectedTimeframe}]
+</span>
               <span className="px-2 py-0.5 text-xs font-bold bg-emerald-100 text-emerald-800 rounded-full border border-emerald-200">
                 {selectedTimeframe} Data
               </span>
