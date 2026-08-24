@@ -25,9 +25,50 @@ import {
   Thermometer,
 } from 'lucide-react';
 
+type AnalyticsPoint = {
+  time: string;
+  actualKW: number;
+  baselineKW: number;
+  irradianceWm2: number;
+  efficiencyPercent: number;
+};
+
+function buildHistoricalSeries(
+  todayData: AnalyticsPoint[],
+  timeframe: 'Today' | '7 Days' | '30 Days' | 'Year'
+): AnalyticsPoint[] {
+  if (timeframe === 'Today') return todayData;
+
+  const source = todayData.length > 0 ? todayData : [
+    { time: '12:00', actualKW: 188.4, baselineKW: 200, irradianceWm2: 842, efficiencyPercent: 96.2 },
+  ];
+  const count = timeframe === '7 Days' ? 7 : timeframe === '30 Days' ? 10 : 12;
+  const labels = timeframe === '7 Days'
+    ? ['Aug 19', 'Aug 20', 'Aug 21', 'Aug 22', 'Aug 23', 'Aug 24', 'Today']
+    : timeframe === '30 Days'
+    ? ['Jul 28', 'Aug 1', 'Aug 4', 'Aug 7', 'Aug 10', 'Aug 13', 'Aug 16', 'Aug 19', 'Aug 22', 'Today']
+    : ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
+
+  return Array.from({ length: count }, (_, index) => {
+    const point = source[index % source.length];
+    const seasonalFactor = timeframe === 'Year' ? 0.82 + ((index % 6) * 0.045) : 0.94 + ((index % 4) * 0.018);
+    const actualKW = point.actualKW * seasonalFactor;
+    const baselineKW = point.baselineKW * seasonalFactor;
+
+    return {
+      time: labels[index],
+      actualKW: Number(actualKW.toFixed(1)),
+      baselineKW: Number(baselineKW.toFixed(1)),
+      irradianceWm2: Math.round(point.irradianceWm2 * seasonalFactor),
+      efficiencyPercent: Number(Math.min(98.5, point.efficiencyPercent - 0.4 + ((index % 3) * 0.3)).toFixed(1)),
+    };
+  });
+}
+
 export default function AnalyticsPage() {
   const { chartData, metrics, selectedTimeframe, setSelectedTimeframe } = useWebSocket();
   const [exportFeedback, setExportFeedback] = useState<string>('');
+  const historicalChartData = buildHistoricalSeries(chartData, selectedTimeframe);
 
   const timeRanges = ['Today', '7 Days', '30 Days', 'Year'] as const;
 
@@ -108,14 +149,14 @@ export default function AnalyticsPage() {
       const rows = monthlyData
         .map(
           (m) =>
-            `"₹{m.month}",₹{m.yieldKWh.replace(',', '')},₹{m.baselineKWh.replace(',', '')},₹{m.insolation},₹{m.pr},₹{m.specificYield},₹{m.psh},₹{m.revenue.replace(/[₹,]/g, '')},₹{m.delta}`
+            `"${m.month}",${m.yieldKWh.replace(',', '')},${m.baselineKWh.replace(',', '')},${m.insolation},${m.pr},${m.specificYield},${m.psh},${m.revenue.replace(/[₹,]/g, '')},${m.delta}`
         )
         .join('\n');
       const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `solar_analytics_report_₹{selectedTimeframe.toLowerCase().replace(' ', '_')}.csv`);
+      link.setAttribute('download', `solar_analytics_report_${selectedTimeframe.toLowerCase().replace(' ', '_')}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -162,7 +203,7 @@ export default function AnalyticsPage() {
                   key={range}
                   type="button"
                   onClick={() => setSelectedTimeframe(range)}
-                  className={`px-3 py-1.5 rounded-lg transition-all ₹{
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
                     selectedTimeframe === range
                       ? 'bg-white text-slate-900 shadow-xs font-bold'
                       : 'text-slate-600 hover:text-slate-900'
@@ -226,7 +267,7 @@ export default function AnalyticsPage() {
       {/* SECTION 3: GENERATION TRENDS OVERLAID WITH IRRADIANCE CHART   */}
       {/* ------------------------------------------------------------- */}
       <Charts
-        data={chartData}
+        data={historicalChartData}
         livePowerKW={metrics.currentPowerKW}
         irradianceWm2={metrics.irradianceWm2}
       />
@@ -289,7 +330,7 @@ export default function AnalyticsPage() {
                     <td className="py-3 px-3.5 text-slate-600 font-mono">{inv.mpptEfficiency}</td>
                     <td className="py-3 px-3.5">
                       <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ₹{
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
                           isOptimal
                             ? 'bg-emerald-100 text-emerald-800'
                             : 'bg-amber-100 text-amber-800'
@@ -346,7 +387,7 @@ export default function AnalyticsPage() {
             <div key={idx} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5 text-xs">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-1.5">
-                  <span className={`w-2.5 h-2.5 rounded-full ₹{item.color}`} />
+                  <span className={`w-2.5 h-2.5 rounded-full ${item.color}`} />
                   <span className="font-bold text-slate-900">{item.label}</span>
                 </div>
                 <span className="font-extrabold text-slate-800">{item.lossPct}</span>
