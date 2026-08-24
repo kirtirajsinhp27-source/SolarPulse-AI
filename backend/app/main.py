@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api import diagnostics, websockets, predictions, intraday
+from app.api import diagnostics, websockets, predictions, intraday, inverters
 from app.services.intraday_dashboard import build_dashboard_intraday
 
 app = FastAPI(
@@ -13,6 +13,20 @@ app = FastAPI(
     version=settings.VERSION,
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(
     diagnostics.router,
     prefix=settings.API_V1_STR
@@ -30,6 +44,11 @@ app.include_router(
 
 app.include_router(
     websockets.router,
+    prefix=settings.API_V1_STR
+)
+
+app.include_router(
+    inverters.router,
     prefix=settings.API_V1_STR
 )
 

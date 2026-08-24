@@ -23,11 +23,14 @@ if config.config_file_name is not None:
 from app.database import Base
 from app.config import settings
 
+# Import all SQLAlchemy models so Alembic can detect them
+from app.models import solar
+from app.models import telemetry
+
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 # Set target metadata for autogenerate support
 target_metadata = Base.metadata
-
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.

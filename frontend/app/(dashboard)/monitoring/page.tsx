@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useWebSocket } from '@/lib/useWebSocket';
+import { useRouter } from 'next/navigation';
 import {
   Activity,
   Zap,
@@ -18,8 +19,37 @@ import {
 } from 'lucide-react';
 
 export default function MonitoringPage() {
+  const router = useRouter();
+
   const { metrics, pingLatencyMs, lastUpdated, isStreaming, selectedTimeframe } = useWebSocket();
   const [selectedInverter, setSelectedInverter] = useState<string>('ALL');
+
+  const [registeredInverters, setRegisteredInverters] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadRegisteredInverters = async () => {
+      try {
+        const response = await fetch(
+          'http://127.0.0.1:8001/api/v1/inverters',
+          {
+            cache: 'no-store',
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to load registered inverters');
+        }
+
+        const data = await response.json();
+
+        setRegisteredInverters(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Failed to load registered inverters:', error);
+      }
+    };
+
+    loadRegisteredInverters();
+  }, []);
 
   const timeframeScale = {
     Today: 1,
@@ -106,8 +136,36 @@ export default function MonitoringPage() {
       financialLossINR: 18.0,
       lossReason: 'Normal operating variation',
     },
-  ];
+    ];
 
+  const registeredInverterCards = registeredInverters
+    .filter(
+      (registered) =>
+        !inverters.some(
+          (existing) => existing.id === registered.inverter_id
+        )
+    )
+    .map((registered) => ({
+      id: registered.inverter_id,
+      name: registered.name,
+      status: 'Registered',
+      dcPowerKW: 0,
+      acPowerKW: 0,
+      efficiency: '—',
+      tempC: 0,
+      voltageV: 0,
+      currentA: 0,
+      gridFreqHz: 0,
+      powerFactor: 0,
+      mppt1: { v: '—', a: '—', p: '—' },
+      mppt2: { v: '—', a: '—', p: '—' },
+      dailyYieldKWh: 0,
+      electricityLossKWh: 0,
+      financialLossINR: 0,
+      lossReason: 'Awaiting live telemetry connection',
+    }));
+
+  const allInverters = [...inverters, ...registeredInverterCards];
   // Inverter Telemetry Live Telemetry Points (High Frequency)
   const telemetryHistory = [
     { time: '14:00', inv1: 48.2, inv2: 47.1, inv3: 42.8, inv4: 48.5 },
@@ -117,7 +175,7 @@ export default function MonitoringPage() {
     { time: '14:20', inv1: 49.8, inv2: 48.5, inv3: 44.2, inv4: 50.1 },
   ];
 
-  const timeframeInverters = inverters.map((inverter) => ({
+    const timeframeInverters = allInverters.map((inverter) => ({
     ...inverter,
     dcPowerKW: Number((inverter.dcPowerKW * timeframeScale * liveScale).toFixed(1)),
     acPowerKW: Number((inverter.acPowerKW * timeframeScale * liveScale).toFixed(1)),
@@ -172,7 +230,13 @@ export default function MonitoringPage() {
       {/* ------------------------------------------------------------- */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center space-x-1 bg-white p-1 rounded-xl border border-slate-200/90 shadow-xs text-xs font-semibold">
-          {['ALL', 'INV-01', 'INV-02', 'INV-03', 'INV-04'].map((tab) => (
+          {[
+  'ALL',
+  ...inverters.map((inverter) => inverter.id),
+  ...registeredInverters
+    .map((inverter) => inverter.inverter_id)
+    .filter((id) => !inverters.some((inverter) => inverter.id === id)),
+].map((tab) => (
             <button
               key={tab}
               type="button"
@@ -186,7 +250,15 @@ export default function MonitoringPage() {
               {tab === 'ALL' ? 'All Inverters' : tab}
             </button>
           ))}
-        </div>
+
+	  <button
+            type="button"
+            onClick={() => router.push('/monitoring/add-inverter')}
+            className="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-     all"
+	  >
+	    + Add Inverter
+	  </button>
+          </div>
 
         <div className="text-xs text-slate-500 font-medium">
           Total String Inverters: <strong className="text-slate-900">4x 50kW Sungrow SG50CX</strong>
