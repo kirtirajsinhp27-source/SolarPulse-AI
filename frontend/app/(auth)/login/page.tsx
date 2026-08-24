@@ -1020,7 +1020,7 @@ export default function AuthPage() {
 
       {/* Footer info */}
       <footer className="mt-8 text-center text-[11px] text-slate-200 font-medium">
-        &copy; {new Date().getFullYear()} Acme Inc. All rights reserved. &bull; Privacy & Terms
+        &copy; {new Date().getFullYear()} SolarPulse AI. All rights reserved. &bull; Privacy & Terms
       </footer>
     </div>
   );

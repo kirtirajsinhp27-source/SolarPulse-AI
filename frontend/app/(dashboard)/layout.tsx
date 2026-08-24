@@ -82,6 +82,13 @@ function DashboardContent({
 
   const getPageInfo = () => {
     switch (pathname) {
+      case '/dashboard':
+        return {
+          title: 'Solar PV Dashboard',
+          subtitle:
+            'Plant Alpha • Live Generation Overview, Loss Tracking & Operational Health',
+        };
+
       case '/analytics':
         return {
           title: 'Solar PV Analytics',
@@ -93,7 +100,7 @@ function DashboardContent({
         return {
           title: 'Solar PV Panels',
           subtitle:
-            'Plant Alpha • 48-Module Array Diagnostics & Health Matrix',
+            'Plant Alpha • 48-Panel Array Diagnostics & Health Matrix',
         };
 
       case '/faults':
@@ -170,7 +177,7 @@ function DashboardContent({
           {children}
 
           <footer className="pt-6 pb-4 text-center text-[11px] text-slate-200 font-medium">
-            &copy; {new Date().getFullYear()} Acme Inc. All rights reserved.
+            &copy; {new Date().getFullYear()} SolarPulse AI. All rights reserved.
             &bull; Privacy & Terms
           </footer>
         </main>

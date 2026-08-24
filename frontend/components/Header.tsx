@@ -81,7 +81,7 @@ export default function Header({
                   )}
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                 </span>
-                <span>{telemetryStatus === 'live' ? 'Recorded Data Live' : telemetryStatus === 'no-data' ? 'No Recorded Data' : telemetryStatus === 'offline' ? 'Backend Offline' : 'Loading Data'}</span>
+                <span>{telemetryStatus === 'live' ? 'Telemetry Connected' : telemetryStatus === 'no-data' ? 'No Telemetry Data' : telemetryStatus === 'offline' ? 'Backend Offline' : 'Loading Telemetry'}</span>
                 <span className="text-[10px] text-emerald-600 font-normal border-l border-emerald-200 pl-1.5 ml-0.5">
                   {telemetryStatus === 'live' ? `${pingLatencyMs}ms` : ''}
                 </span>

@@ -401,7 +401,7 @@ export default function OnboardingPage() {
 
       {/* Persistent Bottom Footer */}
       <footer className="mt-8 text-center text-xs text-[#94A3B8] font-normal">
-        &copy; 2026 Acme Inc. All rights reserved. &bull; Privacy & Terms
+        &copy; 2026 SolarPulse AI. All rights reserved. &bull; Privacy & Terms
       </footer>
     </div>
   );

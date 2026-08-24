@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   Grid3X3,
@@ -14,27 +14,80 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { SolarPanelModule } from '@/types';
+import { buildDefaultPanels } from '@/lib/useWebSocket';
 
 interface PanelGridProps {
   panels: SolarPanelModule[];
 }
 
 export default function PanelGrid({ panels }: PanelGridProps) {
+  const safePanels = Array.isArray(panels) && panels.length >= 48 ? panels : buildDefaultPanels();
   const [selectedArray, setSelectedArray] = useState<string>('All');
   const [selectedModule, setSelectedModule] = useState<SolarPanelModule | null>(
-    panels.find((p) => p.status === 'warning') || panels[0]
+    safePanels.find((p) => p.status === 'warning') || safePanels[0] || null
   );
 
+  useEffect(() => {
+    if (safePanels.length === 0) {
+      setSelectedModule(null);
+      return;
+    }
+
+    const nextSelected =
+      safePanels.find((p) => p.id === selectedModule?.id) ||
+      safePanels.find((p) => p.status === 'warning') ||
+      safePanels[0];
+
+    setSelectedModule(nextSelected);
+  }, [safePanels, selectedModule?.id]);
+
   const arrays = ['All', 'Array A', 'Array B', 'Array C', 'Array D'];
+  const arrayList = Array.from(new Set(safePanels.map((panel) => panel.arrayId))).sort();
+  const totalPanels = safePanels.length;
+  const arraySummary = arrays
+    .filter((arr) => arr !== 'All')
+    .map((arr) => ({
+      name: arr,
+      count: safePanels.filter((panel) => panel.arrayId === arr).length,
+      strings: new Set(safePanels.filter((panel) => panel.arrayId === arr).map((panel) => panel.stringId)).size,
+    }));
 
   const filteredPanels =
     selectedArray === 'All'
-      ? panels
-      : panels.filter((p) => p.arrayId === selectedArray);
+      ? safePanels
+      : safePanels.filter((p) => p.arrayId === selectedArray);
 
-  const optimalCount = panels.filter((p) => p.status === 'optimal').length;
-  const warningCount = panels.filter((p) => p.status === 'warning').length;
-  const criticalCount = panels.filter((p) => p.status === 'critical' || p.status === 'offline').length;
+  const groupedPanels =
+    selectedArray === 'All'
+      ? arrays
+          .filter((arr) => arr !== 'All')
+          .map((arr) => {
+            const items = safePanels.filter((panel) => panel.arrayId === arr);
+            const stringGroups = Array.from(new Set(items.map((panel) => panel.stringId))).sort();
+
+            return {
+              name: arr,
+              strings: stringGroups.map((stringId) => ({
+                stringId,
+                items: items.filter((panel) => panel.stringId === stringId),
+              })),
+            };
+          })
+      : [
+          {
+            name: selectedArray,
+            strings: Array.from(
+              new Set(filteredPanels.map((panel) => panel.stringId))
+            ).sort().map((stringId) => ({
+              stringId,
+              items: filteredPanels.filter((panel) => panel.stringId === stringId),
+            })),
+          },
+        ];
+
+  const optimalCount = safePanels.filter((p) => p.status === 'optimal').length;
+  const warningCount = safePanels.filter((p) => p.status === 'warning').length;
+  const criticalCount = safePanels.filter((p) => p.status === 'critical' || p.status === 'offline').length;
 
   return (
     <div className="bg-white rounded-2xl shadow-xl border border-slate-200/80 p-5 sm:p-6 transition-all">
@@ -45,17 +98,25 @@ export default function PanelGrid({ panels }: PanelGridProps) {
             Solar PV Array Health Grid
           </h2>
           <p className="text-xs text-slate-500 font-medium">
-            48 Monocrystalline PERC Modules (4 Strings)
+            {totalPanels} Monocrystalline PERC Modules • {arrayList.length} Arrays • {Array.from(new Set(safePanels.map((panel) => panel.stringId))).length} Strings
+          </p>
+          <p className="mt-1 text-[10px] uppercase tracking-[0.14em] text-slate-400 font-bold">
+            {arraySummary.map((entry) => `${entry.name}: ${entry.count} panels`).join(' • ')}
           </p>
         </div>
 
-        <Link
-          href="/panels"
-          className="text-xs font-semibold text-slate-700 hover:text-slate-900 flex items-center group self-start sm:self-auto"
-        >
-          <span>Full Matrix View</span>
-          <ChevronRight className="w-3.5 h-3.5 ml-0.5 group-hover:translate-x-0.5 transition-transform" />
-        </Link>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-700">
+            {totalPanels} panels
+          </span>
+          <Link
+            href="/panels"
+            className="text-xs font-semibold text-slate-700 hover:text-slate-900 flex items-center group"
+          >
+            <span>Full Matrix View</span>
+            <ChevronRight className="w-3.5 h-3.5 ml-0.5 group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        </div>
       </div>
 
       {/* Filter Tabs & Quick Health Counters */}
@@ -100,39 +161,63 @@ export default function PanelGrid({ panels }: PanelGridProps) {
       </div>
 
       {/* Solar Panel Matrix Grid */}
-      <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-12 gap-1.5 p-3 rounded-xl bg-slate-50 border border-slate-200/80 mb-4">
-        {filteredPanels.map((mod) => {
-          const isSelected = selectedModule?.id === mod.id;
-          const isWarning = mod.status === 'warning';
-          const isCritical = mod.status === 'critical' || mod.status === 'offline';
+      <div className="space-y-3 p-3 rounded-xl bg-slate-50 border border-slate-200/80 mb-4">
+        {groupedPanels.map(({ name, strings }) => (
+          <div key={name} className="rounded-xl border border-slate-200 bg-white/80 p-2.5 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                {name}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">
+                {strings.reduce((count, group) => count + group.items.length, 0)} modules
+              </span>
+            </div>
 
-          let bgClass = 'bg-emerald-500 hover:bg-emerald-600';
-          let borderClass = 'border-emerald-600/40';
+            <div className="space-y-2">
+              {strings.map(({ stringId, items }) => (
+                <div key={stringId} className="rounded-lg border border-slate-200 bg-slate-50 p-1.5">
+                  <div className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500 pl-1">
+                    {stringId}
+                  </div>
+                  <div className="grid grid-cols-6 gap-1.5">
+                    {items.map((mod) => {
+                      const isSelected = selectedModule?.id === mod.id;
+                      const isWarning = mod.status === 'warning';
+                      const isCritical = mod.status === 'critical' || mod.status === 'offline';
 
-          if (isWarning) {
-            bgClass = 'bg-amber-500 hover:bg-amber-600 animate-pulse';
-            borderClass = 'border-amber-600';
-          } else if (isCritical) {
-            bgClass = 'bg-red-500 hover:bg-red-600';
-            borderClass = 'border-red-600';
-          }
+                      let bgClass = 'bg-emerald-500 hover:bg-emerald-600';
+                      let borderClass = 'border-emerald-600/40';
 
-          return (
-            <button
-              key={mod.id}
-              type="button"
-              onClick={() => setSelectedModule(mod)}
-              title={`${mod.id} (${mod.arrayId}) - ${mod.powerW}W - ${mod.status.toUpperCase()}`}
-              className={`h-9 rounded-lg border flex flex-col items-center justify-center text-[10px] font-bold text-white transition-all shadow-2xs ${bgClass} ${borderClass} ${
-                isSelected
-                  ? 'ring-2 ring-slate-900 ring-offset-1 scale-105 z-10'
-                  : 'opacity-90 hover:opacity-100'
-              }`}
-            >
-              <span>{mod.id.replace('MOD-', '')}</span>
-            </button>
-          );
-        })}
+                      if (isWarning) {
+                        bgClass = 'bg-amber-500 hover:bg-amber-600 animate-pulse';
+                        borderClass = 'border-amber-600';
+                      } else if (isCritical) {
+                        bgClass = 'bg-red-500 hover:bg-red-600';
+                        borderClass = 'border-red-600';
+                      }
+
+                      return (
+                        <button
+                          key={mod.id}
+                          type="button"
+                          onClick={() => setSelectedModule(mod)}
+                          title={`${mod.id} (${mod.arrayId}) - ${mod.powerW}W - ${mod.status.toUpperCase()}`}
+                          className={`h-9 rounded-lg border flex flex-col items-center justify-center text-[10px] font-bold text-white transition-all shadow-2xs ${bgClass} ${borderClass} ${
+                            isSelected
+                              ? 'ring-2 ring-slate-900 ring-offset-1 scale-105 z-10'
+                              : 'opacity-90 hover:opacity-100'
+                          }`}
+                        >
+                          <span>{mod.id.replace('MOD-', '').replace(/^[A-Z]/, '')}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Selected Module Detail Inspector */}

@@ -39,6 +39,7 @@ export default function Sidebar({
   const router = useRouter();
 
   const navItems = [
+    { name: 'Dashboard', href: '/dashboard', icon: Activity, badge: 'Live' },
     { name: 'Monitoring', href: '/monitoring', icon: Activity, badge: 'Live' },
     { name: 'Panels', href: '/panels', icon: Grid3X3 },
     { name: 'Analytics', href: '/analytics', icon: BarChart3 },
@@ -92,7 +93,7 @@ export default function Sidebar({
             </div>
             <div className="text-[11px] text-slate-500 flex items-center mt-1">
               <Radio className="w-3 h-3 mr-1 text-slate-400" />
-              48 Modules • 4 Inverters
+              48 Panels • 4 Arrays • 4 Inverters
             </div>
           </div>
 

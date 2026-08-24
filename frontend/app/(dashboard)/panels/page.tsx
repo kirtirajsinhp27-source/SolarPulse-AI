@@ -18,8 +18,12 @@ export default function PanelsPage() {
             Solar Panel Array Matrix
           </h1>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
-            High-resolution module-level diagnostics, string current matching & hotspot mapping
+            Total plant capacity: 48 panels across 4 arrays with module-level diagnostics and hotspot mapping.
           </p>
+        </div>
+        <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700">
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+          48 Panels Total
         </div>
       </div>
 
