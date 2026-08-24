@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AIInsightItem, AlertSeverity, AlertStatus } from '@/types';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://solarpulse-api.onrender.com';
+
 type MetricState = {
   currentPowerKW: number;
   ratedCapacityKW: number;
@@ -194,7 +196,7 @@ export function useWebSocket() {
     const loadDashboard = async () => {
       try {
         const response = await fetch(
-          'http://127.0.0.1:8001/api/v1/dashboard/overview'
+          `${API_BASE_URL}/api/v1/dashboard/overview`
         );
 
         if (!response.ok) {

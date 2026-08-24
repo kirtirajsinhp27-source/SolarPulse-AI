@@ -19,6 +19,8 @@ import {
   TrendingUp,
 } from 'lucide-react';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://solarpulse-api.onrender.com';
+
 function buildHistoricalFallback(timeframe: '7 Days' | '30 Days' | 'Year') {
   const count = timeframe === '7 Days' ? 7 : timeframe === '30 Days' ? 30 : 12;
   const interval = timeframe === 'Year' ? 'month' : 'day';
@@ -50,7 +52,7 @@ const { selectedTimeframe } = useTimeframe();
     const loadRegisteredInverters = async () => {
       try {
         const response = await fetch(
-          'http://127.0.0.1:8001/api/v1/inverters',
+          `${API_BASE_URL}/api/v1/inverters`,
           {
             cache: 'no-store',
           }
@@ -89,7 +91,7 @@ const { selectedTimeframe } = useTimeframe();
       const timeframe = timeframeMap[selectedTimeframe];
 
       const response = await fetch(
-        `http://127.0.0.1:8001/api/v1/historical/${timeframe}`,
+        `${API_BASE_URL}/api/v1/historical/${timeframe}`,
         {
           cache: 'no-store',
         }
